@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gobin/web"
+	"bitbin/web"
 	"log"
 )
 
