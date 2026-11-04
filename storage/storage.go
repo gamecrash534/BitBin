@@ -16,18 +16,18 @@ func Init(bp string, c bool) {
 	compress = c
 }
 
-func StoreFile(key string, data []byte) error {
+func StoreFile(key string, data []byte, alreadyCompressed bool) error {
 	f, err := os.Create(basePath + "/" + key)
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		e := f.Close()
-		if err == nil {
-			err = e
-		}
-	}()
+	defer f.Close()
+
+	if alreadyCompressed {
+		_, err = f.Write(data)
+		return err
+	}
 
 	var compression int
 	if compress {
@@ -40,11 +40,13 @@ func StoreFile(key string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	defer gzw.Close()
 
-	gzw.Write(data)
+	if _, err = gzw.Write(data); err != nil {
+		gzw.Close()
+		return err
+	}
 
-	return err
+	return gzw.Close()
 }
 
 func GetContents(key string) ([]byte, error) {
@@ -58,6 +60,7 @@ func GetContents(key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
 	gzw, err := gzip.NewReader(f)
 	if err != nil {
@@ -67,7 +70,9 @@ func GetContents(key string) ([]byte, error) {
 
 	buf := bytes.NewBuffer(make([]byte, 0))
 
-	io.Copy(buf, gzw)
+	if _, err = io.Copy(buf, gzw); err != nil {
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }

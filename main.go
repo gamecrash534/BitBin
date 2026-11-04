@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	storage.Init("/dev/null", true)
+	storage.Init("E:/Temp", true)
 	log.Println("running")
 	web.RunServer(8080, "https://github.com/gamecrash534", "github")
 }

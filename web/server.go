@@ -77,7 +77,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = storage.StoreFile(key, data)
+		err = storage.StoreFile(key, data, r.Header.Get("Content-Encoding") == "gzip")
 		if err != nil {
 			printErr(w, err, "file storing")
 			return

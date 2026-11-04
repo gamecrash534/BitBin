@@ -64,18 +64,31 @@
     </style>
     <script>
         async function upload() {
-            let text = document.getElementById("content").value;
+            const text = document.getElementById("content").value;
             if (!text) return;
+            const data = await compress(text);
 
-            var res = await fetch("/", {
+            const res = await fetch("/", {
                 method: "POST",
-                body: text,
+                body: data,
                 headers: {
-                    "Content-Type": "text/plain"
+                    "Content-Type": "text/plain",
+                    "Content-Encoding": "gzip"
                 }
             });
 
             if (res.status === 201) window.location.href = (await res.json()).key;
+        }
+
+        async function compress(text) {
+            const str = new Blob([text]).stream();
+            const compressed = str.pipeThrough(new CompressionStream("gzip"));
+            const chunks = [];
+
+            for await (const chunk of compressed) chunks.push(chunk);
+            const blob = new Blob(chunks);
+            const buf = await blob.arrayBuffer();
+            return new Uint8Array(buf);
         }
     </script>
 </html>
