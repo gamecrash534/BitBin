@@ -45,6 +45,14 @@ func RunServer(port uint, l string, lt string) {
 	http.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "web/favicon.svg")
 	})
+	http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(405)
+			w.Write([]byte("This path can only be used to POST data!"))
+			return
+		}
+		onPost(w, r)
+	})
 	http.HandleFunc("/{path}", pathHandler)
 
 	log.Fatal(http.ListenAndServe(":"+strconv.FormatUint(uint64(port), 10), nil))
@@ -58,41 +66,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if r.Method == http.MethodPost {
-		log.Println("Received post")
-
-		data, err := io.ReadAll(r.Body)
-		if err != nil {
-			printErr(w, err, "POST body retrieval")
-			return
-		}
-
-		var key string
-		for {
-			key = randomStr()
-			exists, err := storage.Exists(key)
-			if err != nil {
-				printErr(w, err, "key gen")
-				return
-			}
-
-			if !exists {
-				break
-			}
-		}
-
-		err = storage.StoreFile(key, data, r.Header.Get("Content-Encoding") == "gzip")
-		if err != nil {
-			printErr(w, err, "file storing")
-			return
-		}
-
-		w.WriteHeader(201)
-		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(Response{Key: key})
-		if err != nil {
-			printErr(w, err, "POST response")
-			return
-		}
+		onPost(w, r)
 	}
 }
 
@@ -113,6 +87,44 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write(data)
+}
+
+func onPost(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received post")
+
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		printErr(w, err, "POST body retrieval")
+		return
+	}
+
+	var key string
+	for {
+		key = randomStr()
+		exists, err := storage.Exists(key)
+		if err != nil {
+			printErr(w, err, "key gen")
+			return
+		}
+
+		if !exists {
+			break
+		}
+	}
+
+	err = storage.StoreFile(key, data, r.Header.Get("Content-Encoding") == "gzip")
+	if err != nil {
+		printErr(w, err, "file storing")
+		return
+	}
+
+	w.WriteHeader(201)
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(Response{Key: key})
+	if err != nil {
+		printErr(w, err, "POST response")
+		return
+	}
 }
 
 func printErr(w http.ResponseWriter, err error, at string) {
