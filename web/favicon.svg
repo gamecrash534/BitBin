@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+    <rect x="0" y="0" width="512" height="512" rx="110" fill="#21262d"/>
+    <text x="256" y="370" text-anchor="middle" font-family="Cascadia Code" font-size="360" fill="#e4551d">b</text>
+
+</svg>

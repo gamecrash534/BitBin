@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <title>bitbin</title>
+        <link rel="icon" href="/favicon.svg">
     </head>
     <noscript>To upload a file, you must have JavaScript enabled</noscript>
     <body>
@@ -16,7 +17,7 @@
     </body>
     <style>
         * {
-            font-family: monospace;
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
             box-sizing: border-box;
         }
 
@@ -27,20 +28,31 @@
             top: 0;
             height: 2em;
             background: #161b22;
-            text-align: left;
-            vertical-align: center;
-            padding: 0.3em 0.5em;
+            display: flex;
+            align-items: center;
         }
 
         .nav .right {
-            float: right;
+            margin-left: auto;
         }
 
         .nav a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
             text-decoration: none;
             cursor: pointer;
             color: #e4551d;
+            margin: 0 0.5em;
+            padding: 0.2em;
+            text-align: center;
         }
+
+        .nav a:hover {
+            background: rgb(68 68 68 / 0.66);
+        }
+
 
         .wrapper {
             position: absolute;

@@ -42,6 +42,9 @@ func RunServer(port uint, l string, lt string) {
 	rnd = rand.New(src)
 
 	http.HandleFunc("/", viewHandler)
+	http.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "web/favicon.svg")
+	})
 	http.HandleFunc("/{path}", pathHandler)
 
 	log.Fatal(http.ListenAndServe(":"+strconv.FormatUint(uint64(port), 10), nil))
