@@ -1,0 +1,16 @@
+when:
+  event: [tag]
+  branch: master
+
+steps:
+  - name: build
+    image: golang:1.26-alpine
+    commands:
+      - go build -ldflags "-w" .
+  - name: publish artifacts
+    image: woodpeckerci/plugin-release
+    settings:
+      api-key:
+        from_secret: reg_repo_w
+      files:
+        - bitbin
