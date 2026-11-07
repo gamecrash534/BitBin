@@ -39,7 +39,7 @@ func getConfig() Config {
 		conf.Link = *l
 	}
 
-	if lt := getenv("link_port"); lt != nil {
+	if lt := getenv("link_title"); lt != nil {
 		conf.LinkTitle = *lt
 	}
 
