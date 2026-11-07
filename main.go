@@ -17,59 +17,55 @@ type Config struct {
 }
 
 func main() {
-	conf := getConfig(os.Args[1:])
+	conf := getConfig()
 
 	storage.Init(conf.StorageDir, true)
 	log.Println("Running on port " + strconv.Itoa(int(conf.Port)))
 	web.RunServer(conf.Port, conf.Link, conf.LinkTitle)
 }
 
-func getConfig(args []string) Config {
+func getConfig() Config {
 	var conf Config
-	flags := parseFlags(args)
 
-	for k, v := range flags {
-		switch k {
-		case "p":
-			fallthrough
-		case "port":
-			{
-				l, err := strconv.Atoi(v)
-				if err != nil || l < 0 {
-					log.Fatalln("The value for the port flag must be a positive integer!")
-				}
+	if d := getenv("directory"); d != nil {
+		conf.StorageDir = *d
+	}
 
-				conf.Port = uint(l)
-			}
+	if port := getenvUint("port"); port != nil {
+		conf.Port = *port
+	}
 
-		case "d":
-			conf.StorageDir = v
-		case "l":
-			conf.Link = v
-		case "t":
-			conf.LinkTitle = v
-		}
+	if l := getenv("link"); l != nil {
+		conf.Link = *l
+	}
+
+	if lt := getenv("link_port"); lt != nil {
+		conf.LinkTitle = *lt
 	}
 
 	return conf
 }
 
-func parseFlags(v []string) map[string]string {
-	flags := map[string]string{}
+func getenv(key string) *string {
+	v := os.Getenv("BITBIN_" + strings.ToUpper(key))
 
-	for i := range v {
-		if v[i][0] != '-' {
-			continue
-		}
-		flag := v[i][1:]
-
-		parts := strings.SplitN(flag, "=", 2)
-		if len(parts) < 2 {
-			log.Fatalln("Need to provide a value to the '" + flag + "' flag!")
-		} else {
-			flags[parts[0]] = parts[1]
-		}
+	if v == "" {
+		return nil
 	}
 
-	return flags
+	return &v
+}
+
+func getenvUint(key string) *uint {
+	v := getenv(key)
+	if v == nil {
+		return nil
+	}
+
+	c, err := strconv.Atoi(*v)
+	if err != nil {
+		return nil
+	}
+
+	return new(uint(c))
 }
