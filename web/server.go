@@ -41,21 +41,37 @@ func RunServer(port uint, l string, lt string) {
 	src := rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixMicro()))
 	rnd = rand.New(src)
 
-	http.HandleFunc("/", viewHandler)
-	http.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", viewHandler)
+	mux.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "web/favicon.svg")
 	})
-	http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.WriteHeader(405)
-			w.Write([]byte("This path can only be used to POST data!"))
+			http.Error(w, "Only POST allowed on this path", http.StatusMethodNotAllowed)
 			return
 		}
-		onPost(w, r)
+		postHandler(w, r)
 	})
-	http.HandleFunc("/{path}", pathHandler)
+	mux.HandleFunc("/{path}", pathHandler)
 
-	log.Fatal(http.ListenAndServe(":"+strconv.FormatUint(uint64(port), 10), nil))
+	log.Fatal(http.ListenAndServe(":"+strconv.FormatUint(uint64(port), 10), corsHandler(mux)))
+}
+
+func corsHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +82,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if r.Method == http.MethodPost {
-		onPost(w, r)
+		postHandler(w, r)
 	}
 }
 
@@ -89,7 +105,7 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func onPost(w http.ResponseWriter, r *http.Request) {
+func postHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Received post")
 
 	data, err := io.ReadAll(r.Body)

@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"io"
+	"log"
 	"os"
 )
 
@@ -17,7 +18,7 @@ func Init(bp string, c bool) {
 }
 
 func StoreFile(key string, data []byte, alreadyCompressed bool) error {
-	f, err := os.Create(basePath + "/" + key)
+	f, err := os.Create(basePath + string(os.PathSeparator) + key)
 	if err != nil {
 		return err
 	}
@@ -53,10 +54,11 @@ func GetContents(key string) ([]byte, error) {
 	if ex, err := Exists(key); err != nil {
 		return nil, err
 	} else if ex == false {
+		log.Println("Could not find requested file: " + basePath + string(os.PathSeparator) + key)
 		return nil, nil
 	}
 
-	f, err := os.Open(basePath + "\\" + key)
+	f, err := os.Open(basePath + string(os.PathSeparator) + key)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +80,7 @@ func GetContents(key string) ([]byte, error) {
 }
 
 func Exists(key string) (bool, error) {
-	_, err := os.Stat(basePath + "\\" + key)
+	_, err := os.Stat(basePath + string(os.PathSeparator) + key)
 	if errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	} else if err != nil {
