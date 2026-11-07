@@ -106,8 +106,6 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received post")
-
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		printErr(w, err, "POST body retrieval")

@@ -15,10 +15,11 @@ var compress bool
 func Init(bp string, c bool) {
 	basePath = bp
 	compress = c
+	log.Println("File paths: " + path("fileKey"))
 }
 
 func StoreFile(key string, data []byte, alreadyCompressed bool) error {
-	f, err := os.Create(basePath + string(os.PathSeparator) + key)
+	f, err := os.Create(path(key))
 	if err != nil {
 		return err
 	}
@@ -27,6 +28,7 @@ func StoreFile(key string, data []byte, alreadyCompressed bool) error {
 
 	if alreadyCompressed {
 		_, err = f.Write(data)
+		log.Println("Stored file with key '" + key + "'")
 		return err
 	}
 
@@ -47,6 +49,7 @@ func StoreFile(key string, data []byte, alreadyCompressed bool) error {
 		return err
 	}
 
+	log.Println("Stored file with key '" + key + "'")
 	return gzw.Close()
 }
 
@@ -54,11 +57,11 @@ func GetContents(key string) ([]byte, error) {
 	if ex, err := Exists(key); err != nil {
 		return nil, err
 	} else if ex == false {
-		log.Println("Could not find requested file: " + basePath + string(os.PathSeparator) + key)
+		log.Println("Could not find requested file with key '" + key + "'")
 		return nil, nil
 	}
 
-	f, err := os.Open(basePath + string(os.PathSeparator) + key)
+	f, err := os.Open(path(key))
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +79,12 @@ func GetContents(key string) ([]byte, error) {
 		return nil, err
 	}
 
+	log.Println("Read file with key '" + key + "'")
 	return buf.Bytes(), nil
 }
 
 func Exists(key string) (bool, error) {
-	_, err := os.Stat(basePath + string(os.PathSeparator) + key)
+	_, err := os.Stat(path(key))
 	if errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	} else if err != nil {
@@ -88,4 +92,8 @@ func Exists(key string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func path(key string) string {
+	return basePath + string(os.PathSeparator) + key
 }
