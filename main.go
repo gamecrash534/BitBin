@@ -25,7 +25,12 @@ func main() {
 }
 
 func getConfig() Config {
-	var conf Config
+	conf := Config{
+		StorageDir: "./data",
+		Port:       8080,
+		Link:       "https://git.gamecrash.dev/game.crash/BitBin",
+		LinkTitle:  "source",
+	}
 
 	if d := getenv("directory"); d != nil {
 		conf.StorageDir = *d
