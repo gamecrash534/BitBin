@@ -7,22 +7,17 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"math/rand/v2"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 //go:embed page.gohtml
 var page embed.FS
 
-const keyCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 var link string
 var linkTitle string
 
 var tmpl *template.Template
-var rnd *rand.Rand
 
 type Page struct {
 	Link      string
@@ -37,9 +32,6 @@ func RunServer(port uint, l string, lt string) {
 	link = l
 	linkTitle = lt
 	tmpl = template.Must(template.ParseFS(page, "*.gohtml"))
-
-	src := rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixMicro()))
-	rnd = rand.New(src)
 
 	mux := http.NewServeMux()
 
@@ -89,20 +81,21 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 func pathHandler(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("path")
 
-	data, err := storage.GetContents(key)
+	c, data, err := storage.Get(key)
 	if err != nil {
 		printErr(w, err, "file content retrieval")
 		return
 	}
 
-	if data == nil {
+	if data == nil || c == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("Given path could not be found"))
 		return
 	}
 
 	w.WriteHeader(200)
-	w.Write(data)
+	w.Header().Set("Content-Type", data.MimeType)
+	w.Write(c)
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
@@ -112,21 +105,12 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var key string
-	for {
-		key = randomStr()
-		exists, err := storage.Exists(key)
-		if err != nil {
-			printErr(w, err, "key gen")
-			return
-		}
-
-		if !exists {
-			break
-		}
+	ctype := r.Header.Get("Content-Type")
+	if ctype == "" {
+		ctype = "applicatiom/octet-stream"
 	}
 
-	err = storage.StoreFile(key, data, r.Header.Get("Content-Encoding") == "gzip")
+	key, _, err := storage.Create(data, ctype, r.Header.Get("Content-Encoding") == "gzip")
 	if err != nil {
 		printErr(w, err, "file storing")
 		return
@@ -134,7 +118,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(201)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(Response{Key: key})
+	err = json.NewEncoder(w).Encode(Response{Key: *key})
 	if err != nil {
 		printErr(w, err, "POST response")
 		return
@@ -145,13 +129,4 @@ func printErr(w http.ResponseWriter, err error, at string) {
 	w.WriteHeader(500)
 	w.Write([]byte("There was an internal error :("))
 	log.Println("Error occurred at "+at+": ", err)
-}
-
-func randomStr() string {
-	res := make([]byte, 8)
-	for i := range res {
-		res[i] = keyCharset[rnd.IntN(len(keyCharset))]
-	}
-
-	return string(res)
 }

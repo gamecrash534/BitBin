@@ -19,7 +19,15 @@ type Config struct {
 func main() {
 	conf := getConfig()
 
-	storage.Init(conf.StorageDir, true)
+	storage.Init(conf.StorageDir, storage.Config{
+		CompressFiles:     true,
+		DbCompressOnStart: true,
+		DbCacheMiB:        2,
+		DataTtlMin:        43200,
+	})
+
+	defer storage.Close()
+
 	log.Println("Running on port " + strconv.Itoa(int(conf.Port)))
 	web.RunServer(conf.Port, conf.Link, conf.LinkTitle)
 }

@@ -1,8 +1,7 @@
 package storage
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"log"
 
 	"github.com/syndtr/goleveldb/leveldb"
@@ -11,13 +10,9 @@ import (
 )
 
 type Data struct {
-	deletion int64
-	mimeType string
+	Deletion int64
+	MimeType string
 }
-
-var buf = bytes.NewBuffer(make([]byte, 0))
-var enc = gob.NewEncoder(buf)
-var dec = gob.NewDecoder(buf)
 
 var db *leveldb.DB
 
@@ -96,23 +91,14 @@ func b(s string) []byte {
 }
 
 func ser(d Data) ([]byte, error) {
-	buf.Reset()
-
-	if err := enc.Encode(d); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return json.Marshal(d)
 }
 
 func deser(d []byte) (*Data, error) {
-	buf.Reset()
-	buf.Write(d)
-	var r Data
+	var t Data
 
-	if err := dec.Decode(&r); err != nil {
+	if err := json.Unmarshal(d, &t); err != nil {
 		return nil, err
 	}
-
-	return &r, nil
+	return &t, nil
 }

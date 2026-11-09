@@ -17,6 +17,10 @@ func InitFS(bp string, c bool) {
 	basePath = bp
 	compress = c
 	log.Println("File paths: " + path("fileKey"))
+
+	if d, err := os.Stat(bp); os.IsNotExist(err) || !d.IsDir() {
+		os.MkdirAll(bp, 0750)
+	}
 }
 
 func StoreFile(key string, data []byte, alreadyCompressed bool) error {
