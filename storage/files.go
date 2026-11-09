@@ -97,9 +97,11 @@ func path(key string) string {
 	return basePath + string(os.PathSeparator) + key
 }
 
-func Paths(start string, keys ...string) {
+func Paths(start string, keys ...string) string {
 	var res = start
 	for _, key := range keys {
 		res += string(os.PathSeparator) + key
 	}
+
+	return res
 }

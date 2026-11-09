@@ -3,7 +3,6 @@ package storage
 import (
 	"log"
 	"math/rand/v2"
-	"os"
 	"time"
 )
 
@@ -25,8 +24,8 @@ func Init(p string, c Config) {
 	src := rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixMicro()))
 	rnd = rand.New(src)
 
-	InitDB(p+string(os.PathSeparator)+"database", c.DbCompressOnStart, c.DbCacheMiB)
-	InitFS(p+string(os.PathSeparator)+"data", c.CompressFiles)
+	InitDB(Paths(p, "database"), c.DbCompressOnStart, c.DbCacheMiB)
+	InitFS(Paths(p, "files"), c.CompressFiles)
 }
 
 func Create(d []byte, mime string, alreadyCompressed bool) (*string, *Data, error) {
