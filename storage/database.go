@@ -51,7 +51,12 @@ func Exists(k string) (bool, error) {
 		return false, err
 	}
 
-	return b, nil
+	if b {
+		return true, nil
+	}
+
+	log.Println("Not found: '", k, "'")
+	return false, nil
 }
 
 func PutDB(k string, d Data) error {

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"log"
 	"math/rand/v2"
 	"os"
 	"time"
@@ -49,6 +50,7 @@ func Create(d []byte, mime string, alreadyCompressed bool) (*string, *Data, erro
 		return nil, nil, err
 	}
 
+	log.Println("Created, key: '", key, "'")
 	return key, &data, nil
 }
 
@@ -69,6 +71,7 @@ func Get(key string) ([]byte, *Data, error) {
 		return nil, nil, err
 	}
 
+	log.Println("Retrieved, key: '", key, "'")
 	return contents, data, nil
 }
 
@@ -78,7 +81,14 @@ func Delete(key string) error {
 		return err
 	}
 
-	return DeleteFile(key)
+	err = DeleteFile(key)
+
+	if err != nil {
+		return err
+	}
+
+	log.Println("Deleted, key: '", key, "'")
+	return nil
 }
 
 func randomStr() string {

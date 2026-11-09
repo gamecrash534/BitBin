@@ -16,7 +16,7 @@ var compress bool
 func InitFS(bp string, c bool) {
 	basePath = bp
 	compress = c
-	log.Println("File paths: " + path("fileKey"))
+	log.Println("File paths: " + path("[files here]"))
 
 	if d, err := os.Stat(bp); os.IsNotExist(err) || !d.IsDir() {
 		os.MkdirAll(bp, 0750)
@@ -33,7 +33,6 @@ func StoreFile(key string, data []byte, alreadyCompressed bool) error {
 
 	if alreadyCompressed {
 		_, err = f.Write(data)
-		log.Println("Stored file with key '" + key + "'")
 		return err
 	}
 
@@ -54,7 +53,6 @@ func StoreFile(key string, data []byte, alreadyCompressed bool) error {
 		return err
 	}
 
-	log.Println("Stored file with key '" + key + "'")
 	return gzw.Close()
 }
 
@@ -62,7 +60,6 @@ func GetContents(key string) ([]byte, error) {
 	if ex, err := Exists(key); err != nil {
 		return nil, err
 	} else if ex == false {
-		log.Println("Could not find requested file with key '" + key + "'")
 		return nil, nil
 	}
 
@@ -84,7 +81,6 @@ func GetContents(key string) ([]byte, error) {
 		return nil, err
 	}
 
-	log.Println("Read file with key '" + key + "'")
 	return buf.Bytes(), nil
 }
 
@@ -99,4 +95,11 @@ func DeleteFile(key string) error {
 
 func path(key string) string {
 	return basePath + string(os.PathSeparator) + key
+}
+
+func Paths(start string, keys ...string) {
+	var res = start
+	for _, key := range keys {
+		res += string(os.PathSeparator) + key
+	}
 }
