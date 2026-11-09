@@ -1,99 +1,108 @@
 package storage
 
 import (
-	"bytes"
-	"compress/gzip"
-	"errors"
-	"io"
-	"log"
-	"os"
+	"math/rand/v2"
+	"time"
 )
 
-var basePath string
-var compress bool
-
-func Init(bp string, c bool) {
-	basePath = bp
-	compress = c
-	log.Println("File paths: " + path("fileKey"))
+type Config struct {
+	CompressFiles     bool
+	DbCompressOnStart bool
+	DbCacheMiB        int
+	DataTtlMin        int64
 }
 
-func StoreFile(key string, data []byte, alreadyCompressed bool) error {
-	f, err := os.Create(path(key))
+const keyCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+var conf Config
+
+var rnd *rand.Rand
+
+func Init(p string, c Config) {
+	conf = c
+	src := rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixMicro()))
+	rnd = rand.New(src)
+
+	InitDB(p, c.DbCompressOnStart, c.DbCacheMiB)
+	InitFS(p, c.CompressFiles)
+}
+
+func Create(d []byte, mime string, alreadyCompressed bool) (*string, *Data, error) {
+	key, err := nonexistentStr()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	data := Data{
+		deletion: 0,
+		mimeType: mime,
+	}
+
+	err = StoreFile(*key, d, alreadyCompressed)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = PutDB(*key, data)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return key, &data, nil
+}
+
+func Get(key string) ([]byte, *Data, error) {
+	if e, err := Exists(key); err != nil {
+		return nil, nil, err
+	} else if !e {
+		return nil, nil, nil
+	}
+
+	data, err := GetDB(key)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	contents, err := GetContents(key)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return contents, data, nil
+}
+
+func Delete(key string) error {
+	err := RemoveDB(key)
 	if err != nil {
 		return err
 	}
 
-	defer f.Close()
-
-	if alreadyCompressed {
-		_, err = f.Write(data)
-		log.Println("Stored file with key '" + key + "'")
-		return err
-	}
-
-	var compression int
-	if compress {
-		compression = gzip.DefaultCompression
-	} else {
-		compression = gzip.NoCompression
-	}
-
-	gzw, err := gzip.NewWriterLevel(f, compression)
-	if err != nil {
-		return err
-	}
-
-	if _, err = gzw.Write(data); err != nil {
-		gzw.Close()
-		return err
-	}
-
-	log.Println("Stored file with key '" + key + "'")
-	return gzw.Close()
+	return DeleteFile(key)
 }
 
-func GetContents(key string) ([]byte, error) {
-	if ex, err := Exists(key); err != nil {
-		return nil, err
-	} else if ex == false {
-		log.Println("Could not find requested file with key '" + key + "'")
-		return nil, nil
+func randomStr() string {
+	res := make([]byte, 8)
+	for i := range res {
+		res[i] = keyCharset[rnd.IntN(len(keyCharset))]
 	}
 
-	f, err := os.Open(path(key))
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	gzw, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, err
-	}
-	defer gzw.Close()
-
-	buf := bytes.NewBuffer(make([]byte, 0))
-
-	if _, err = io.Copy(buf, gzw); err != nil {
-		return nil, err
-	}
-
-	log.Println("Read file with key '" + key + "'")
-	return buf.Bytes(), nil
+	return string(res)
 }
 
-func Exists(key string) (bool, error) {
-	_, err := os.Stat(path(key))
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	} else if err != nil {
-		return false, err
+func nonexistentStr() (*string, error) {
+	var k string
+	for {
+		k = randomStr()
+		exists, err := Exists(k)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if !exists {
+			break
+		}
 	}
 
-	return true, nil
-}
-
-func path(key string) string {
-	return basePath + string(os.PathSeparator) + key
+	return &k, nil
 }

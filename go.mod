@@ -1,5 +1,8 @@
 module bitbin
 
-go 1.26
+go 1.26.0
 
-require github.com/klauspost/compress v1.20.3 // indirect
+require (
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/syndtr/goleveldb v1.0.0 // indirect
+)
