@@ -93,8 +93,8 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(200)
 	w.Header().Set("Content-Type", data.MimeType)
+	w.WriteHeader(200)
 	w.Write(c)
 }
 
@@ -116,8 +116,8 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(201)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
 	err = json.NewEncoder(w).Encode(Response{Key: *key})
 	if err != nil {
 		printErr(w, err, "POST response")
