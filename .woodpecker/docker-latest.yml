@@ -1,0 +1,21 @@
+when:
+  event: [push, manual]
+  branch: master
+
+steps:
+  - name: build & publish
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: git.gamecrash.dev/game.crash/bitbin
+      registry:
+        from_secret: reg_url
+      username:
+        from_secret: reg_owner
+      password:
+        from_secret: reg_token
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+      tags:
+        - preview
+      compress: true
