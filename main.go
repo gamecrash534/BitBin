@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -15,6 +16,8 @@ type Config struct {
 	Link       string
 	LinkTitle  string
 }
+
+var cleanupTask *time.Ticker
 
 func main() {
 	conf := getConfig()
@@ -26,9 +29,14 @@ func main() {
 		DataTtlMin:        43200,
 	})
 
-	defer storage.Close()
+	defer func() {
+		cleanupTask.Stop()
+		storage.Close()
+	}()
 
 	log.Println("Running on port " + strconv.Itoa(int(conf.Port)))
+
+	go createCleanupTask()
 	web.RunServer(conf.Port, conf.Link, conf.LinkTitle)
 }
 
@@ -81,4 +89,25 @@ func getenvUint(key string) *uint {
 	}
 
 	return new(uint(c))
+}
+
+func createCleanupTask() {
+	cleanupTask = time.NewTicker(1 * time.Minute)
+
+	done := make(chan bool)
+	for {
+		select {
+		case <-done:
+			break
+		case _ = <-cleanupTask.C:
+			err := storage.Cleanup()
+			if err != nil {
+				log.Println("Error while performing cleanup:", err)
+				log.Println("Will stop performing cleanups for now")
+
+				done <- true
+				cleanupTask.Stop()
+			}
+		}
+	}
 }

@@ -55,11 +55,10 @@ func Exists(k string) (bool, error) {
 		return true, nil
 	}
 
-	log.Println("Not found: '", k, "'")
 	return false, nil
 }
 
-func PutDB(k string, d Data) error {
+func PutData(k string, d Data) error {
 	r, err := ser(d)
 	if err != nil {
 		return err
@@ -72,7 +71,7 @@ func PutDB(k string, d Data) error {
 	return nil
 }
 
-func GetDB(k string) (*Data, error) {
+func GetData(k string) (*Data, error) {
 	d, err := db.Get(b(k), nil)
 
 	if err != nil {
@@ -87,8 +86,27 @@ func GetDB(k string) (*Data, error) {
 	return r, nil
 }
 
-func RemoveDB(k string) error {
+func RemoveData(k string) error {
 	return db.Delete(b(k), nil)
+}
+
+func IterateData(fn func(key string, value Data) error) error {
+	iter := db.NewIterator(nil, nil)
+	for iter.Next() {
+		d, err := deser(iter.Value())
+		if err != nil {
+			return err
+		}
+
+		err = fn(string(iter.Key()), *d)
+		if err != nil {
+			return err
+		}
+	}
+
+	iter.Release()
+	err := iter.Error()
+	return err
 }
 
 func b(s string) []byte {

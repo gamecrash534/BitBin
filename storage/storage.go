@@ -35,7 +35,7 @@ func Create(d []byte, mime string, alreadyCompressed bool) (*string, *Data, erro
 	}
 
 	data := Data{
-		Deletion: 0,
+		Deletion: time.Now().Unix() + conf.DataTtlMin*int64(time.Minute.Seconds()),
 		MimeType: mime,
 	}
 
@@ -44,12 +44,12 @@ func Create(d []byte, mime string, alreadyCompressed bool) (*string, *Data, erro
 		return nil, nil, err
 	}
 
-	err = PutDB(*key, data)
+	err = PutData(*key, data)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	log.Println("Created, key: '", key, "'")
+	log.Println("Created, key: '", *key, "'")
 	return key, &data, nil
 }
 
@@ -57,10 +57,11 @@ func Get(key string) ([]byte, *Data, error) {
 	if e, err := Exists(key); err != nil {
 		return nil, nil, err
 	} else if !e {
+		log.Println("Not found: '", key, "'")
 		return nil, nil, nil
 	}
 
-	data, err := GetDB(key)
+	data, err := GetData(key)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -75,7 +76,7 @@ func Get(key string) ([]byte, *Data, error) {
 }
 
 func Delete(key string) error {
-	err := RemoveDB(key)
+	err := RemoveData(key)
 	if err != nil {
 		return err
 	}
@@ -88,6 +89,21 @@ func Delete(key string) error {
 
 	log.Println("Deleted, key: '", key, "'")
 	return nil
+}
+
+func Cleanup() error {
+	err := IterateData(func(k string, v Data) error {
+		if time.Now().Unix() >= v.Deletion {
+			err := Delete(k)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 func randomStr() string {
