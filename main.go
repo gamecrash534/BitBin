@@ -12,9 +12,10 @@ import (
 
 type Config struct {
 	StorageDir string
-	Port       uint
+	Port       int
 	Link       string
 	LinkTitle  string
+	FileTtlMin int64
 }
 
 var cleanupTask *time.Ticker
@@ -26,7 +27,7 @@ func main() {
 		CompressFiles:     true,
 		DbCompressOnStart: true,
 		DbCacheMiB:        2,
-		DataTtlMin:        43200,
+		DataTtlMin:        conf.FileTtlMin,
 	})
 
 	defer func() {
@@ -34,7 +35,7 @@ func main() {
 		storage.Close()
 	}()
 
-	log.Println("Running on port " + strconv.Itoa(int(conf.Port)))
+	log.Println("Running on port " + strconv.Itoa(conf.Port))
 
 	go createCleanupTask()
 	web.RunServer(conf.Port, conf.Link, conf.LinkTitle)
@@ -46,13 +47,14 @@ func getConfig() Config {
 		Port:       8080,
 		Link:       "https://git.gamecrash.dev/game.crash/BitBin",
 		LinkTitle:  "source",
+		FileTtlMin: 43200,
 	}
 
 	if d := getenv("directory"); d != nil {
 		conf.StorageDir = *d
 	}
 
-	if port := getenvUint("port"); port != nil {
+	if port := getenvInt("port"); port != nil {
 		conf.Port = *port
 	}
 
@@ -62,6 +64,10 @@ func getConfig() Config {
 
 	if lt := getenv("link_title"); lt != nil {
 		conf.LinkTitle = *lt
+	}
+
+	if ttl := getenvInt("paste_ttl"); ttl != nil {
+		conf.FileTtlMin = int64(*ttl)
 	}
 
 	return conf
@@ -77,7 +83,7 @@ func getenv(key string) *string {
 	return &v
 }
 
-func getenvUint(key string) *uint {
+func getenvInt(key string) *int {
 	v := getenv(key)
 	if v == nil {
 		return nil
@@ -88,7 +94,7 @@ func getenvUint(key string) *uint {
 		return nil
 	}
 
-	return new(uint(c))
+	return &c
 }
 
 func createCleanupTask() {

@@ -93,7 +93,7 @@ func Delete(key string) error {
 
 func Cleanup() error {
 	err := IterateData(func(k string, v Data) error {
-		if time.Now().Unix() >= v.Deletion {
+		if v.Deletion > 0 && time.Now().Unix() >= v.Deletion {
 			err := Delete(k)
 			if err != nil {
 				return err

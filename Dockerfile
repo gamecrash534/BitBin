@@ -9,7 +9,8 @@ COPY --from=build /bitbin /
 ENV BITBIN_PORT=8080 \
     BITBIN_DIRECTORY="/data/bitbin/" \
     BITBIN_LINK="https://git.gamecrash.dev/game.crash/BitBin" \
-    BITBIN_LINK_TITLE="source"
+    BITBIN_LINK_TITLE="source" \
+    BITBIN_PASTE_TTL="43200"
 
 EXPOSE 8080
 

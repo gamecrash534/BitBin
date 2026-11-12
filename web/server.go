@@ -28,7 +28,7 @@ type Response struct {
 	Key string `json:"key"`
 }
 
-func RunServer(port uint, l string, lt string) {
+func RunServer(port int, l string, lt string) {
 	link = l
 	linkTitle = lt
 	tmpl = template.Must(template.ParseFS(page, "*.gohtml"))
@@ -48,7 +48,7 @@ func RunServer(port uint, l string, lt string) {
 	})
 	mux.HandleFunc("/{path}", pathHandler)
 
-	log.Fatal(http.ListenAndServe(":"+strconv.FormatUint(uint64(port), 10), corsHandler(mux)))
+	log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(int64(port), 10), corsHandler(mux)))
 }
 
 func corsHandler(next http.Handler) http.Handler {
