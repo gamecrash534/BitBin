@@ -4,6 +4,7 @@ import (
 	"bitbin/storage"
 	"embed"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"io"
 	"log"
@@ -16,6 +17,7 @@ var page embed.FS
 
 var link string
 var linkTitle string
+var maxUploadSize int64
 
 var tmpl *template.Template
 
@@ -28,9 +30,10 @@ type Response struct {
 	Key string `json:"key"`
 }
 
-func RunServer(port int, l string, lt string) {
+func RunServer(port int, l string, lt string, mus int64) {
 	link = l
 	linkTitle = lt
+	maxUploadSize = mus
 	tmpl = template.Must(template.ParseFS(page, "*.gohtml"))
 
 	mux := http.NewServeMux()
@@ -99,8 +102,16 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) {
+			http.Error(w, "Request body too big", 413)
+			return
+		}
+
 		printErr(w, err, "POST body retrieval")
 		return
 	}

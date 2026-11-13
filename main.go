@@ -8,14 +8,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 type Config struct {
-	StorageDir string
-	Port       int
-	Link       string
-	LinkTitle  string
-	FileTtlMin int64
+	StorageDir    string
+	Port          int
+	Link          string
+	LinkTitle     string
+	FileTtlMin    int64
+	MaxUploadSize int64
 }
 
 var cleanupTask *time.Ticker
@@ -38,16 +41,17 @@ func main() {
 	log.Println("Running on port " + strconv.Itoa(conf.Port))
 
 	go createCleanupTask()
-	web.RunServer(conf.Port, conf.Link, conf.LinkTitle)
+	web.RunServer(conf.Port, conf.Link, conf.LinkTitle, conf.MaxUploadSize)
 }
 
 func getConfig() Config {
 	conf := Config{
-		StorageDir: "./data",
-		Port:       8080,
-		Link:       "https://git.gamecrash.dev/game.crash/BitBin",
-		LinkTitle:  "source",
-		FileTtlMin: 43200,
+		StorageDir:    "./data",
+		Port:          8080,
+		Link:          "https://git.gamecrash.dev/game.crash/BitBin",
+		LinkTitle:     "source",
+		FileTtlMin:    43200,
+		MaxUploadSize: 10 * opt.MiB,
 	}
 
 	if d := getenv("directory"); d != nil {
@@ -68,6 +72,11 @@ func getConfig() Config {
 
 	if ttl := getenvInt("paste_ttl"); ttl != nil {
 		conf.FileTtlMin = int64(*ttl)
+	}
+
+	if mus := getenvInt("max_upload_size"); mus != nil {
+		conf.MaxUploadSize = int64(*mus) * opt.MiB
+		log.Println("max upload mb: ", conf.MaxUploadSize, "\ngiven: ", mus)
 	}
 
 	return conf
