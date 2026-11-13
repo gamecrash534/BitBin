@@ -8,6 +8,16 @@ Due to it being written in Go instead of Java, it comes with a by-default lower 
 > it will still differ from ByteBin itself in many aspects.
 
 ---
+### Usage
+Docker containers are automatically built and provided [here](https://git.gamecrash.dev/game.crash/-/packages/container/bitbin/1).
+
+The tags are separated by each version type and one for the latest commit:
+- major (e.g. `1`)
+- minor (e.g. `1.2`)
+- patch (e.g. `1.2.0`)
+- `preview`: build of the latest commit
+
+---
 ### Configuration
 Configuration can be done by using environment variables. Each one must be prefixed with `BITBIN_`.
 A list of all possible environment variables and their functions:
